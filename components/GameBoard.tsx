@@ -1,10 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { Puzzle, GameState, Word } from '@/types';
-import { generatePuzzle } from '@/lib/puzzle';
-import { loadWords } from '@/lib/words';
-import { wordSimilarity } from '@/lib/similarity';
+import type { GameState, PuzzleResponse } from '@/types';
 import ScoreDisplay from './ScoreDisplay';
 import WordChoice from './WordChoice';
 import FeedbackDisplay from './FeedbackDisplay';
@@ -17,41 +14,65 @@ export default function GameBoard() {
     puzzleCount: 0,
     gameOver: false,
   });
-  const [words, setWords] = useState<Word[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Load words on mount
-    const loadedWords = loadWords();
-    setWords(loadedWords);
-    setIsLoading(false);
-    
-    // Generate first puzzle
-    if (loadedWords.length >= 3) {
-      const puzzle = generatePuzzle(loadedWords);
-      setGameState((prev) => ({
-        ...prev,
-        currentPuzzle: puzzle,
-      }));
+  // Fetch a new puzzle from the API
+  const fetchPuzzle = async () => {
+    try {
+      setError(null);
+      const response = await fetch('/api/puzzle');
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch puzzle');
+      }
+      
+      const puzzle: PuzzleResponse = await response.json();
+      return puzzle;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load puzzle';
+      setError(errorMessage);
+      throw err;
     }
+  };
+
+  // Load initial puzzle on mount
+  useEffect(() => {
+    const loadInitialPuzzle = async () => {
+      try {
+        const puzzle = await fetchPuzzle();
+        setGameState((prev) => ({
+          ...prev,
+          currentPuzzle: puzzle,
+        }));
+      } catch (err) {
+        console.error('Failed to load initial puzzle:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadInitialPuzzle();
   }, []);
 
-  const handleWordChoice = (selectedWord: Word) => {
+  const handleWordChoice = (selectedWord: string) => {
     if (!gameState.currentPuzzle || gameState.feedback !== null) {
       return;
     }
 
-    const isCorrect = selectedWord.name === gameState.currentPuzzle.correctAnswer.name;
-    const similarity = wordSimilarity(
-      gameState.currentPuzzle.starter,
-      selectedWord
-    );
+    const isCorrect = selectedWord === gameState.currentPuzzle.correctAnswer;
+    
+    // Get the similarity score for the selected word
+    const similarity = selectedWord === gameState.currentPuzzle.options[0]
+      ? gameState.currentPuzzle.similarityScores.option1
+      : gameState.currentPuzzle.similarityScores.option2;
 
     const feedback = {
       isCorrect,
       message: isCorrect
-        ? `Great! "${selectedWord.name}" is more similar to "${gameState.currentPuzzle.starter.name}"`
-        : `Not quite. The correct answer was "${gameState.currentPuzzle.correctAnswer.name}"`,
+        ? `Great! "${selectedWord}" is more similar to "${gameState.currentPuzzle.starter}"`
+        : `Not quite. The correct answer was "${gameState.currentPuzzle.correctAnswer}"`,
       similarityScore: similarity,
     };
 
@@ -63,29 +84,33 @@ export default function GameBoard() {
     }));
   };
 
-  const handleNextPuzzle = () => {
-    if (words.length < 3) {
-      return;
+  const handleNextPuzzle = async () => {
+    try {
+      const puzzle = await fetchPuzzle();
+      setGameState((prev) => ({
+        ...prev,
+        currentPuzzle: puzzle,
+        feedback: null,
+        puzzleCount: prev.puzzleCount + 1,
+      }));
+    } catch (err) {
+      console.error('Failed to load next puzzle:', err);
     }
-
-    const puzzle = generatePuzzle(words);
-    setGameState((prev) => ({
-      ...prev,
-      currentPuzzle: puzzle,
-      feedback: null,
-      puzzleCount: prev.puzzleCount + 1,
-    }));
   };
 
-  const handlePlayAgain = () => {
-    const puzzle = generatePuzzle(words);
-    setGameState({
-      score: 0,
-      currentPuzzle: puzzle,
-      feedback: null,
-      puzzleCount: 0,
-      gameOver: false,
-    });
+  const handlePlayAgain = async () => {
+    try {
+      const puzzle = await fetchPuzzle();
+      setGameState({
+        score: 0,
+        currentPuzzle: puzzle,
+        feedback: null,
+        puzzleCount: 0,
+        gameOver: false,
+      });
+    } catch (err) {
+      console.error('Failed to load puzzle for new game:', err);
+    }
   };
 
   if (isLoading) {
@@ -96,23 +121,39 @@ export default function GameBoard() {
     );
   }
 
-  if (!gameState.currentPuzzle) {
+  if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-xl text-red-600">
-          Error: Not enough words to generate puzzles
+      <div className="flex items-center justify-center min-h-screen p-4">
+        <div className="text-center max-w-md">
+          <div className="text-xl text-red-600 mb-4">Error: {error}</div>
+          <p className="text-gray-600 mb-4">
+            Make sure you have generated the embeddings database by running:
+          </p>
+          <code className="bg-gray-100 px-4 py-2 rounded block">
+            npm run generate-embeddings
+          </code>
         </div>
       </div>
     );
   }
 
-  const { starter, options } = gameState.currentPuzzle;
+  if (!gameState.currentPuzzle) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-xl text-red-600">
+          Error: Failed to load puzzle
+        </div>
+      </div>
+    );
+  }
+
+  const { starter, options, correctAnswer } = gameState.currentPuzzle;
   const isOption1Correct =
     gameState.feedback?.isCorrect !== null &&
-    options[0].name === gameState.currentPuzzle.correctAnswer.name;
+    options[0] === correctAnswer;
   const isOption2Correct =
     gameState.feedback?.isCorrect !== null &&
-    options[1].name === gameState.currentPuzzle.correctAnswer.name;
+    options[1] === correctAnswer;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-50">
@@ -122,12 +163,12 @@ export default function GameBoard() {
         <div className="bg-white rounded-lg shadow-lg p-8 mb-6">
           <div className="text-center mb-8">
             <div className="text-sm text-gray-600 mb-2">Which word is most similar to:</div>
-            <div className="text-4xl font-bold text-gray-900">{starter.name}</div>
+            <div className="text-4xl font-bold text-gray-900">{starter}</div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
             <WordChoice
-              word={options[0].name}
+              word={options[0]}
               onClick={() => handleWordChoice(options[0])}
               disabled={gameState.feedback !== null}
               isCorrect={
@@ -143,7 +184,7 @@ export default function GameBoard() {
             />
             <div className="text-gray-400 font-bold text-xl">or</div>
             <WordChoice
-              word={options[1].name}
+              word={options[1]}
               onClick={() => handleWordChoice(options[1])}
               disabled={gameState.feedback !== null}
               isCorrect={
