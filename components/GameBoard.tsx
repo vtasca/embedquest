@@ -15,6 +15,7 @@ export default function GameBoard() {
     currentPuzzle: null,
     feedback: null,
     puzzleCount: 0,
+    gameOver: false,
   });
   const [words, setWords] = useState<typeof import('@/types').Word[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,6 +59,7 @@ export default function GameBoard() {
       ...prev,
       score: isCorrect ? prev.score + 1 : prev.score,
       feedback,
+      gameOver: !isCorrect,
     }));
   };
 
@@ -73,6 +75,17 @@ export default function GameBoard() {
       feedback: null,
       puzzleCount: prev.puzzleCount + 1,
     }));
+  };
+
+  const handlePlayAgain = () => {
+    const puzzle = generatePuzzle(words);
+    setGameState({
+      score: 0,
+      currentPuzzle: puzzle,
+      feedback: null,
+      puzzleCount: 0,
+      gameOver: false,
+    });
   };
 
   if (isLoading) {
@@ -148,7 +161,25 @@ export default function GameBoard() {
 
           <FeedbackDisplay feedback={gameState.feedback} />
 
-          {gameState.feedback !== null && (
+          {gameState.gameOver && (
+            <div className="mt-6 text-center">
+              <div className="mb-6 p-6 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg border-2 border-purple-300">
+                <div className="text-3xl font-bold text-gray-800 mb-2">Game Over!</div>
+                <div className="text-xl text-gray-700 mb-1">Final Score: {gameState.score}</div>
+                <div className="text-sm text-gray-600">
+                  You answered {gameState.score} puzzle{gameState.score !== 1 ? 's' : ''} correctly
+                </div>
+              </div>
+              <button
+                onClick={handlePlayAgain}
+                className="bg-purple-500 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-purple-600 transition-colors shadow-lg hover:shadow-xl"
+              >
+                Play Again
+              </button>
+            </div>
+          )}
+
+          {gameState.feedback !== null && !gameState.gameOver && (
             <div className="mt-6 text-center">
               <button
                 onClick={handleNextPuzzle}

@@ -24,4 +24,5 @@ export interface GameState {
     similarityScore: number | null;
   } | null;
   puzzleCount: number;
+  gameOver: boolean;
 }

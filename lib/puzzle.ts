@@ -1,6 +1,8 @@
 import type { Word, Puzzle } from '@/types';
 import { wordSimilarity } from './similarity';
 
+const SIMILARITY_THRESHOLD = 0.1;
+
 /**
  * Generate a puzzle from a list of words
  * Picks a random starter word and finds two options with appropriate similarity ranges
@@ -34,7 +36,7 @@ export function generatePuzzle(words: Word[]): Puzzle {
 
   // Find a word with lower similarity (but not too low to make it interesting)
   const lowerSimilarityCandidates = similarities.filter(
-    (item) => item.similarity < correctSimilarity - 0.1 && item.similarity > 0.3
+    (item) => item.similarity < correctSimilarity - SIMILARITY_THRESHOLD && item.similarity > 0.3
   );
 
   let wrongAnswer: Word;

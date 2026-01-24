@@ -55,16 +55,31 @@ embedquest/
     └── embeddings.json # Word embeddings (mock data)
 ```
 
-## Adding Real Embeddings
+## Generating Embeddings
 
-To use real word embeddings:
+This project includes a script to generate word embeddings using the [all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) model via `@xenova/transformers`.
 
-1. Replace the mock data in `data/embeddings.json` with your actual embeddings
-2. Ensure each word has:
-   - `name`: string (the word)
-   - `embedding`: number[] (the embedding vector)
+### Generate embeddings from the word list:
 
-The game will automatically use the new embeddings once the file is updated.
+```bash
+npm run generate-embeddings
+```
+
+This will:
+- Read all words from `data/google-10000-english-usa-no-swears-medium.txt`
+- Generate 384-dimensional embeddings using all-MiniLM-L6-v2
+- Save the results to `data/embeddings.json`
+- Take approximately 2-5 minutes to process ~5,460 words
+
+**Note:** The model will be downloaded automatically on first run (~90MB).
+
+### Embedding Format
+
+Each word in `data/embeddings.json` has:
+- `name`: string (the word)
+- `embedding`: number[] (384-dimensional vector)
+
+The game automatically uses the embeddings from this file.
 
 ## How It Works
 
