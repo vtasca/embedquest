@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { Puzzle, GameState } from '@/types';
+import type { Puzzle, GameState, Word } from '@/types';
 import { generatePuzzle } from '@/lib/puzzle';
 import { loadWords } from '@/lib/words';
 import { wordSimilarity } from '@/lib/similarity';
@@ -17,7 +17,7 @@ export default function GameBoard() {
     puzzleCount: 0,
     gameOver: false,
   });
-  const [words, setWords] = useState<typeof import('@/types').Word[]>([]);
+  const [words, setWords] = useState<Word[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export default function GameBoard() {
     }
   }, []);
 
-  const handleWordChoice = (selectedWord: typeof import('@/types').Word) => {
+  const handleWordChoice = (selectedWord: Word) => {
     if (!gameState.currentPuzzle || gameState.feedback !== null) {
       return;
     }
