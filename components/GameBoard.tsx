@@ -5,6 +5,7 @@ import type { GameState, PuzzleResponse } from '@/types';
 import ScoreDisplay from './ScoreDisplay';
 import WordChoice from './WordChoice';
 import FeedbackDisplay from './FeedbackDisplay';
+import HighScoreSaveModal from './HighScoreSaveModal';
 
 export default function GameBoard() {
   const [gameState, setGameState] = useState<GameState>({
@@ -16,6 +17,7 @@ export default function GameBoard() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showSaveModal, setShowSaveModal] = useState(false);
 
   // Fetch a new puzzle from the API
   const fetchPuzzle = async () => {
@@ -108,6 +110,7 @@ export default function GameBoard() {
         puzzleCount: 0,
         gameOver: false,
       });
+      setShowSaveModal(false);
     } catch (err) {
       console.error('Failed to load puzzle for new game:', err);
     }
@@ -212,10 +215,10 @@ export default function GameBoard() {
                 </div>
               </div>
               <button
-                onClick={handlePlayAgain}
+                onClick={() => setShowSaveModal(true)}
                 className="bg-purple-500 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-purple-600 transition-colors shadow-lg hover:shadow-xl"
               >
-                Play Again
+                Save Score
               </button>
             </div>
           )}
@@ -232,6 +235,13 @@ export default function GameBoard() {
           )}
         </div>
       </div>
+
+      {showSaveModal && (
+        <HighScoreSaveModal
+          finalScore={gameState.score}
+          onSaveComplete={handlePlayAgain}
+        />
+      )}
     </div>
   );
 }

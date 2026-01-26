@@ -43,13 +43,21 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="text-center">
+        <div className="text-center space-y-4">
           <Link
             href="/game"
             className="inline-block bg-gradient-to-r from-blue-500 to-purple-500 text-white px-8 py-4 rounded-lg text-xl font-semibold hover:from-blue-600 hover:to-purple-600 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
           >
             Start Game
           </Link>
+          <div>
+            <Link
+              href="/scores"
+              className="inline-block text-purple-600 hover:text-purple-700 font-semibold transition-colors"
+            >
+              View High Scores
+            </Link>
+          </div>
         </div>
 
         <div className="mt-8 pt-8 border-t border-gray-200 text-center text-sm text-gray-500">
