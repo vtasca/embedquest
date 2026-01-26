@@ -1,7 +1,7 @@
 // High score management utilities using browser localStorage
 
 export interface HighScore {
-  name?: string;
+  name: string;
   score: number;
   date: string; // ISO string
 }
@@ -39,20 +39,22 @@ export function getHighScores(): HighScore[] {
 
 /**
  * Save a new high score to localStorage
+ * Name is required
  */
-export function saveHighScore(score: number, name?: string): HighScore {
+export function saveHighScore(score: number, name: string): HighScore {
   if (typeof window === 'undefined') {
     throw new Error('Cannot save high score outside of browser environment');
   }
 
+  if (!name || !name.trim()) {
+    throw new Error('Player name is required to save a high score');
+  }
+
   const newScore: HighScore = {
+    name: name.trim(),
     score,
     date: new Date().toISOString(),
   };
-
-  if (name && name.trim()) {
-    newScore.name = name.trim();
-  }
 
   try {
     const existing = getHighScores();

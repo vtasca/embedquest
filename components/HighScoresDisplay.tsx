@@ -75,7 +75,7 @@ export default function HighScoresDisplay() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="font-semibold text-gray-800">
-                        {score.name || '(Anonymous)'}
+                        {score.name}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-right">

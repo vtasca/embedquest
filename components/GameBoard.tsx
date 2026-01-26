@@ -214,12 +214,20 @@ export default function GameBoard() {
                   You answered {gameState.score} puzzle{gameState.score !== 1 ? 's' : ''} correctly
                 </div>
               </div>
-              <button
-                onClick={() => setShowSaveModal(true)}
-                className="bg-purple-500 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-purple-600 transition-colors shadow-lg hover:shadow-xl"
-              >
-                Save Score
-              </button>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <button
+                  onClick={handlePlayAgain}
+                  className="bg-purple-500 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-purple-600 transition-colors shadow-lg hover:shadow-xl"
+                >
+                  Play Again
+                </button>
+                <button
+                  onClick={() => setShowSaveModal(true)}
+                  className="bg-gray-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-700 transition-colors shadow-lg hover:shadow-xl"
+                >
+                  Save Score
+                </button>
+              </div>
             </div>
           )}
 
