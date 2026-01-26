@@ -35,9 +35,6 @@ export function deserializeEmbedding(blob: Buffer): number[] {
  */
 export function getRandomWords(count: number, modelId: string = 'all-MiniLM-L6-v2'): Word[] {
   const database = getDb();
-
-  // Random seed
-  database.exec(`SELECT randomblob(16);`);
   
   const stmt = database.prepare(`
     SELECT word, embedding

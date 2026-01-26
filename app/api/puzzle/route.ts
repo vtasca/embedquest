@@ -3,6 +3,8 @@ import { getRandomWords } from '@/lib/embeddings-db';
 import { generatePuzzle } from '@/lib/puzzle';
 import type { PuzzleResponse } from '@/types';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/puzzle
  * Generate a new puzzle by querying random words from SQLite and returning
