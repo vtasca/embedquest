@@ -1,34 +1,45 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getHighScores, clearHighScores, formatDate, type HighScore } from '@/lib/high-scores';
+import { getHighScores, formatDate, type HighScore } from '@/lib/high-scores';
 
 export default function HighScoresDisplay() {
   const [highScores, setHighScores] = useState<HighScore[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const scores = getHighScores();
-    setHighScores(scores);
-    setIsLoading(false);
-  }, []);
+    const loadScores = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const scores = await getHighScores();
+        setHighScores(scores);
+      } catch (err) {
+        console.error('Failed to load high scores:', err);
+        setError('Failed to load high scores. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const handleClearScores = () => {
-    try {
-      clearHighScores();
-      setHighScores([]);
-      setShowClearConfirm(false);
-    } catch (err) {
-      console.error('Failed to clear scores:', err);
-      alert('Failed to clear scores. Please try again.');
-    }
-  };
+    loadScores();
+  }, []);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-xl text-gray-600">Loading high scores...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full max-w-2xl">
+        <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="text-red-600 mb-4">{error}</div>
+        </div>
       </div>
     );
   }
@@ -56,7 +67,7 @@ export default function HighScoresDisplay() {
               <tbody>
                 {highScores.map((score, index) => (
                   <tr
-                    key={index}
+                    key={score.id || index}
                     className={`border-b transition-colors ${
                       index < 3
                         ? 'bg-gradient-to-r from-purple-50 to-pink-50'
@@ -88,40 +99,6 @@ export default function HighScoresDisplay() {
                 ))}
               </tbody>
             </table>
-          </div>
-
-          <div className="p-4 bg-gray-50 border-t">
-            <button
-              onClick={() => setShowClearConfirm(true)}
-              className="text-sm text-red-600 hover:text-red-700 font-semibold transition-colors"
-            >
-              Clear All Scores
-            </button>
-          </div>
-        </div>
-      )}
-
-      {showClearConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-2xl p-6 max-w-sm w-full">
-            <div className="text-xl font-bold text-gray-800 mb-4">Clear All Scores?</div>
-            <div className="text-gray-600 mb-6">
-              This action cannot be undone. All your saved high scores will be permanently deleted.
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={handleClearScores}
-                className="flex-1 bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-600 transition-colors"
-              >
-                Clear
-              </button>
-              <button
-                onClick={() => setShowClearConfirm(false)}
-                className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
           </div>
         </div>
       )}

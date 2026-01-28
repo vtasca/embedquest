@@ -3,7 +3,7 @@ import HighScoresDisplay from '@/components/HighScoresDisplay';
 
 export const metadata = {
   title: 'High Scores - EmbedQuest',
-  description: 'View your high scores and compete with yourself',
+  description: 'View global high scores and compete with players worldwide',
 };
 
 export default function ScoresPage() {
@@ -21,7 +21,7 @@ export default function ScoresPage() {
 
         <div className="text-center mb-8">
           <h1 className="text-5xl font-bold text-gray-900 mb-2">High Scores</h1>
-          <p className="text-gray-600">Your device-local score history</p>
+          <p className="text-gray-600">Global leaderboard - see how you rank!</p>
         </div>
 
         <HighScoresDisplay />

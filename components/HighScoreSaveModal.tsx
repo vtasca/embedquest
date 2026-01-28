@@ -25,7 +25,7 @@ export default function HighScoreSaveModal({
     try {
       setError(null);
       setIsSaving(true);
-      saveHighScore(finalScore, playerName.trim());
+      await saveHighScore(finalScore, playerName.trim());
       onSaveComplete();
     } catch (err) {
       console.error('Failed to save high score:', err);

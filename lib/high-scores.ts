@@ -1,84 +1,94 @@
-// High score management utilities using browser localStorage
+// High score management utilities using Supabase database
+
+import { supabase } from './supabase';
 
 export interface HighScore {
+  id?: number;
+  player_id: string;
   name: string;
   score: number;
-  date: string; // ISO string
+  created_at: string; // ISO string (timestamptz from database)
+  date: string; // Alias for created_at for backward compatibility
 }
 
-const HIGH_SCORES_KEY = 'embedquest_high_scores';
-
 /**
- * Get all saved high scores from localStorage, sorted by score (descending)
+ * Get all saved high scores from Supabase, sorted by score (descending)
  */
-export function getHighScores(): HighScore[] {
-  if (typeof window === 'undefined') {
-    // Server-side execution (Next.js SSR)
-    return [];
-  }
-
+export async function getHighScores(): Promise<HighScore[]> {
   try {
-    const stored = localStorage.getItem(HIGH_SCORES_KEY);
-    if (!stored) {
+    const { data, error } = await supabase
+      .from('games')
+      .select('id, player_id, name, score, created_at')
+      .order('score', { ascending: false })
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Failed to fetch high scores:', error);
+      throw error;
+    }
+
+    if (!data) {
       return [];
     }
 
-    const scores: HighScore[] = JSON.parse(stored);
-    // Sort by score descending, then by date descending (newest first)
-    return scores.sort((a, b) => {
-      if (b.score !== a.score) {
-        return b.score - a.score;
-      }
-      return new Date(b.date).getTime() - new Date(a.date).getTime();
-    });
+    // Map database records to HighScore interface, adding date alias
+    return data.map((record) => ({
+      id: record.id,
+      player_id: record.player_id,
+      name: record.name,
+      score: record.score,
+      created_at: record.created_at,
+      date: record.created_at, // Alias for backward compatibility
+    }));
   } catch (err) {
-    console.error('Failed to parse high scores:', err);
-    return [];
-  }
-}
-
-/**
- * Save a new high score to localStorage
- * Name is required
- */
-export function saveHighScore(score: number, name: string): HighScore {
-  if (typeof window === 'undefined') {
-    throw new Error('Cannot save high score outside of browser environment');
-  }
-
-  if (!name || !name.trim()) {
-    throw new Error('Player name is required to save a high score');
-  }
-
-  const newScore: HighScore = {
-    name: name.trim(),
-    score,
-    date: new Date().toISOString(),
-  };
-
-  try {
-    const existing = getHighScores();
-    const updated = [newScore, ...existing];
-    localStorage.setItem(HIGH_SCORES_KEY, JSON.stringify(updated));
-    return newScore;
-  } catch (err) {
-    console.error('Failed to save high score:', err);
+    console.error('Failed to fetch high scores:', err);
     throw err;
   }
 }
 
 /**
- * Clear all saved high scores from localStorage
+ * Save a new high score to Supabase
+ * Name is required
  */
-export function clearHighScores(): void {
-  if (typeof window === 'undefined') {
-    throw new Error('Cannot clear high scores outside of browser environment');
+export async function saveHighScore(score: number, name: string): Promise<HighScore> {
+  if (!name || !name.trim()) {
+    throw new Error('Player name is required to save a high score');
   }
 
+  // Generate UUID for player_id
+  const playerId = crypto.randomUUID();
+
   try {
-    localStorage.removeItem(HIGH_SCORES_KEY);
+    const { data, error } = await supabase
+      .from('games')
+      .insert({
+        player_id: playerId,
+        name: name.trim(),
+        score: score,
+      })
+      .select('id, player_id, name, score, created_at')
+      .single();
+
+    if (error) {
+      console.error('Failed to save high score:', error);
+      throw error;
+    }
+
+    if (!data) {
+      throw new Error('No data returned from database');
+    }
+
+    // Return HighScore with date alias
+    return {
+      id: data.id,
+      player_id: data.player_id,
+      name: data.name,
+      score: data.score,
+      created_at: data.created_at,
+      date: data.created_at, // Alias for backward compatibility
+    };
   } catch (err) {
-    console.error('Failed to clear high scores:', err);
+    console.error('Failed to save high score:', err);
     throw err;
   }
 }
